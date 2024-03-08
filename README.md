@@ -1,101 +1,84 @@
-# ViaBTC Exchange Server
-
-ViaBTC Exchange Server is a trading backend with high-speed performance, designed for cryptocurrency exchanges. It can support up to 10000 trades every second and real-time user/market data notification through websocket.
-
-## Architecture
-
-![Architecture](https://user-images.githubusercontent.com/1209350/32476113-5ffc622a-c3b0-11e7-9755-924f17bcc167.jpeg)
-
-For this project, it is marked as Server in this picture.
-
-## Code structure
-
-**Required systems**
-
-* MySQL: For saving operation log, user balance history, order history and trade history.
-
-* Redis: A redis sentinel group is for saving market data.
-
-* Kafka: A message system.
-
-**Base library**
-
-* network: An event base and high performance network programming library, easily supporting [1000K TCP connections](http://www.kegel.com/c10k.html). Include TCP/UDP/UNIX SOCKET server and client implementation, a simple timer, state machine, thread pool. 
-
-* utils: Some basic library, including log, config parse, some data structure and http/websocket/rpc server implementation.
-
-**Modules**
-
-* matchengine: This is the most important part for it records user balance and executes user order. It is in memory database, saves operation log in MySQL and redoes the operation log when start. It also writes user history into MySQL, push balance, orders and deals message to kafka.
-
-* marketprice: Reads message(s) from kafka, and generates k line data.
-
-* readhistory: Reads history data from MySQL.
-
-* accesshttp: Supports a simple HTTP interface and hides complexity for upper layer.
-
-* accwssws: A websocket server that supports query and pushes for user and market data. By the way, you need nginx in front to support wss.
-
-* alertcenter: A simple server that writes FATAL level log to redis list so we can send alert emails.
-
-## Compile and Install
-
-**Operating system**
-
-Ubuntu 14.04 or Ubuntu 16.04. Not yet tested on other systems.
-
-**Requirements**
-
-See [requirements](https://github.com/viabtc/viabtc_exchange_server/wiki/requirements). Install the mentioned system or library.
-
-You MUST use the depends/hiredis to install the hiredis library. Or it may not be compatible.
-
-**Compilation**
-
-Compile network and utils first. The rest all are independent.
-
-**Deployment**
-
-One single instance is given for matchengine, marketprice and alertcenter, while readhistory, accesshttp and accwssws can have multiple instances to work with loadbalancing.
-
-Please do not install every instance on the same machine.
-
-Every process runs in deamon and starts with a watchdog process. It will automatically restart within 1s when crashed.
-
-The best practice of deploying the instance is in the following directory structure:
-
-```
-matchengine
-|---bin
-|   |---matchengine.exe
-|---log
-|   |---matchengine.log
-|---conf
-|   |---config.json
-|---shell
-|   |---restart.sh
-|   |---check_alive.sh
-```
-
-## API
-
-[HTTP Protocol](https://github.com/viabtc/viabtc_exchange_server/wiki/HTTP-Protocol) and [Websocket Protocol](https://github.com/viabtc/viabtc_exchange_server/wiki/WebSocket-Protocol) documents are available in Chinese. Should time permit, we will have it translated into English in the future.</br>
-[Python3 API realisation](https://github.com/testnet-exchange/python-viabtc-api)
-
-
-## Websocket authorization
-
-The websocket protocol has an authorization method (`server.auth`) which is used to authorize the websocket connection to subscribe to user specific events (trade and balance events).
-
-To accomodate this method your exchange frontend will need to supply an internal endpoint which takes an authorization token from the HTTP header named `Authorization` and validates that token and returns the user_id.
-
-The internal authorization endpoint is defined by the `auth_url` setting in the config file (`accessws/config.json`).
-
-Example response: `{"code": 0, "message": null, "data": {"user_id": 1}}`
-
-## Donation
-
-* BTC: 14x3GrEoMLituT6vF2wcEbqMAxCvt2724s
-* BCC: 1364ZurPv8uTgnFr1uqowJDFF15aNFemkf
-* ETH: 0xA2913166AE0689C07fCB5C423559239bB2814b6D
-
+ネットワーク全体で唯一のオープンソースコアコードの取引所、アーキテクチャ/コード品質が見える
+これはあなたが取引所を設立するか、二次開発の最善の選択だと思います。
+声明：一部のソースがオープンしていない（有償提供）、私の連絡先Telegram：@btc 853 Mail：aster142857@gmail.com
+概要
+本プロジェクトは、Java（SpringCloud）に基づいて開発されたビットコイン取引所｜BTC取引所｜ETH取引所｜デジタル通貨取引所｜取引プラットフォーム｜仲介取引エンジンである。本プロジェクトはSpringCloudマイクロサービス開発に基づいており、デジタル通貨取引所の構築と二次開発に使用でき、完全なシステム構成部分がある。
+取引エンジンの仲介
+バックグラウンド管理（バックエンド+フロントエンド）
+フロント（取引ページ、イベントページ、パーソナルセンターなど）
+ネイティブアンドロイドアプリのソースコード
+ネイティブアップルAPPソースコード
+通貨ウォレットRPCソース
+サーバの構成と導入について
+もしあなたが自分のパソコンやクラウドサーバーに取引所システムを構築したいならば、私のところにはいくつかの基本的な配置マニュアルが用意されています。もちろん、linux/unixにソフトウェアをインストールするのは簡単なことではありません。あなたは一定のlinuxの基礎と命令行の基礎が必要で、同時に問題に遭遇して問題を解決する勇気と忍耐力が必要で、あなたが順調になることを祈ります！
+Spring Cloudは、一連のフレームワークの順序付けられたコレクションです。Spring Bootの開発の利便性を利用して、サービス発見登録、配置センター、メッセージングバス、ロードバランシング、遮断器、データ監視などの分散システムインフラストラクチャの開発を巧みに簡略化し、Spring Bootの開発スタイルでワンクリック起動と配置を行うことができる。Spring Cloudはホイールを繰り返し製造していない。各社が開発した比較的成熟した、実際の試練に耐えうるサービスフレームワークを組み合わせただけで、Spring Bootスタイルによる再パッケージにより複雑な配置と実現原理を遮蔽し、最終的に開発者に分かりやすく、配置しやすく、メンテナンスしやすい分散型システム開発キットを残した。一般的に、完全なSpringCloudフレームワークは次の図のようになります。
+SpringCloudフレームワーク図
+SpringCloudに慣れていない場合は、SpringCloudに関するチュートリアルを簡単に学習してから、本プロジェクトを見に戻ると、より使いやすくなります。注意してください。Springcloudフレームワーク図は完全なアーキテクチャであるため、開発時には適切に内容を切り取り、開発と導入をより迅速にするために、いくつかの違いがあります。
+取引エンジンの集約について
+本システムは取引キューに対してメモリ仲介の方式を採用して行い、Kafkaを仲介注文情報の転送、MongoDB持続化注文の成約明細、MySQLは注文全体の成約を記録する。その中で、01 _ Framework/Exchangeプロジェクトは主にメモリの仲介を担当し、01 _ Framework/Marketプロジェクトは主に注文の成約の持続化、相場の生成、相場のプッシュなどのサービスを担当し、以下を含む：
+K線データ、間隔はそれぞれ：1分、5分、15分、30分、1時間、1日、1週間、1月
+すべての取引ペアの市場深度（market depth）データ
+すべての取引ペアの最新価格
+最近成約された取引ペア
+メモリ間取り引き取引によってサポートされるモデル
+価格制限注文と価格制限注文の仲介
+市価注文と価格制限注文の仲介
+価格制限注文と市価注文の仲介
+市価注文と市価注文の仲介
+価格制限&市価注文処理ロジック
+価格制限&市価注文処理ロジック注意：この図はずっと前のもので、最新コードのロジックはもっと複雑になった
+エンジンサポートのその他の機能の集約
+通常の価格制限と市価仲介取引機能のほか、本システムの仲介取引エンジンは活動成約モードを導入し、取引ペア（例えば：BTC/USDT）の取引開始時間、初期発行量、初期発行価格、活動モードなどのパラメータを設置することにより、豊富な仲介取引モードを制定することができ、それによって異なる仲介モードを満たすことができる。
+例を挙げて説明する.
+取引所は2020年8月8日12時00分00秒にAAA/USDTに対してオンライン取引を開始する予定ですが、新たにオンラインになった通貨として、活動がなければどうすればいいのでしょうか。プロジェクト側や取引所は、AAAを10,000個出して0.0001 USDT（市場価格：0.0005）で買い取ってもらうことにした。このシステムは、このアクティビティの設定をサポートしています。
+また、プロジェクト側や取引所が10,000個のAAAを0.0001 USDTの価格で発行することを決定した場合、購入するのではなく、USDTにチャージしたすべてのユーザーが平均10,000個のAAAを分割することを望んでおり、本システムはこのような活動の設定もサポートしている。
+つまり、本システムは高度にカスタマイズされた集約モデルをサポートしていると同時に、Exchangeプロジェクトの集約ロジックを修正するだけで、自分が望む集約取引モデルを開発することもできます。
+これはお客様に作ったものですが、その後お客様が運営しなくなったので、このサイトを残しました。私にはサーバー権限がないので、このサイトにはいつでもアクセスできない可能性があります。
+テストサイトを構築するにはクラウドサーバを何台も購入する必要があり、コストがかかるため、私自身はテストステーションを構築していませんが、システムは完全で、1年近くの商用と実際の運用の試練を経ています。
+取引ロボットについて
+取引ロボットは自動取引のプログラムであり、外部相場に基づいて、自動的に取引を行うことができ、本取引所の取引が価格と外部を一致させ、一部のユーザーの「レンガ運び」による損失を防止することができる。
+れんがの運搬について
+例えば、A取引所BTC価格は10000 USDTであり、B取引所のBTC価格は9500 USDTであり、タイルを運ぶことはB取引所で9500 USDTの価格でBTCを購入し、A取引所に振り替えて差額（500 USDT）を稼ぐことである。
+取引所に取引ロボットがなければ、本取引所の通貨価格は他の主流取引所と比べて差があり、ユーザーに「れんがを運ぶ」ことができ、取引所の損失を招くことになる。
+また、取引ロボットには、取引所が初期に運営されている間に、取引所が閑散とし、ユーザーがいないと感じることのない初期の取引の深さを形成する機能もあります。
+私自身はJavaプログラマーで、モバイル端末の開発についてはあまり知らないので、パッケージのデバッグインストールも実際には私が有料で他の人に手伝ってもらいました。
+技術者がいなければ、完全な取引所システムを構築するのを助けることができますが、システムの安定した運用には運行維持者が欠かせないので、1人から2人の保守員をお願いする必要があります。
+チャージロジック
+システムディスプレイ（PCフロントエンド）
+トップページ
+貨幣取引
+法貨取引
+ログイン＃ログイン＃
+アクティビティ/イノベーションラボ
+イノベーションラボの詳細
+プロモーションパートナー
+公告
+ヘルプ
+システム運転展示（APPフロントエンド）
+トップページ
+相場
+K線
+取り引き
+パーソナルセンター
+個人資産管理
+招待管理
+携帯電話Web端末の一部ページ
+APPダウンロード
+お年玉を奪う
+アクティビティ/イノベーションラボ
+システム運転展示（バックエンド）
+ログイン＃ログイン＃
+トップページ
+ユーザー管理
+招待管理
+外貨取引オーダ管理
+トップページのBanner管理
+取引ペア管理
+アクティビティ管理
+お年玉管理
+通貨管理
+OTC管理、バックエンド開発完了、フロントエンド未ドッキング
+APPダウンロード画像の例
+入力ピクチャ摘要入力ピクチャ摘要入力ピクチャ摘要入力ピクチャ摘要入力ピクチャ摘要
+特に注意する
+このソースコードを使用してビジネス活動に従事し、他人や自分に損失を与えた場合、本人は一切責任を負いません！
